@@ -1,0 +1,68 @@
+using System.Collections;
+using UnityEngine;
+
+public class MovementToPlaces : MonoBehaviour
+{
+    private Transform[] _destinationPoints;
+    private Transform _allPlacesParrent;
+    private float _speed;
+    private int _currentDestinationIndex;
+
+    private void Start()
+    {
+        _destinationPoints = new Transform[_allPlacesParrent.childCount];
+
+        for (int i = 0; i < _allPlacesParrent.childCount; i++)
+            _destinationPoints[i] = _allPlacesParrent.GetChild(i).transform;
+    }
+
+    private void Update()
+    {
+        var pointByNumberInArray = _destinationPoints[_currentDestinationIndex];
+        transform.position = Vector3.MoveTowards(transform.position, pointByNumberInArray.position, _speed * Time.deltaTime);
+
+
+        if (Vector3.Distance(transform.position, pointByNumberInArray.position) < 0.01f)
+        {
+            GoToNextDestination();
+        }
+    }
+
+    public Vector3 GoToNextDestination()
+    {
+        _currentDestinationIndex = (_currentDestinationIndex + 1) % _destinationPoints.Length;
+        var nextPointVector = _destinationPoints[_currentDestinationIndex].transform.position;
+        transform.forward = nextPointVector - transform.position;
+        return nextPointVector;
+    }
+}
+
+public class BulletShooting : MonoBehaviour
+{
+
+    [SerializeField] private GameObject _bulletObject;
+    [SerializeField] private float _bulletSpeed;
+    [SerializeField] private float _shootingInterval;
+
+    private Transform _target;
+
+    void Start()
+    {
+        StartCoroutine(ShootCorutine());
+    }
+
+    private IEnumerator ShootCorutine()
+    {
+        while (enabled)
+        {
+            Vector3 direction = (_target.position - transform.position).normalized;
+            GameObject newBullet = Instantiate(_bulletObject, transform.position + direction, Quaternion.identity);
+
+            Rigidbody bulletRigidbody = newBullet.GetComponent<Rigidbody>();
+            bulletRigidbody.transform.up = direction;
+            bulletRigidbody.velocity = direction * _bulletSpeed;
+
+            yield return new WaitForSeconds(_shootingInterval);
+        }
+    }
+}
